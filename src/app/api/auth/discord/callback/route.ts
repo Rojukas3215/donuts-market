@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const requestUrl = new URL(req.url);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin;
   const guildId = process.env.DISCORD_GUILD_ID;
   const adminRoleId = process.env.DISCORD_ADMIN_ROLE_ID;
 
