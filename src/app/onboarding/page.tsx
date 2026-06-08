@@ -14,24 +14,24 @@ import {
 } from 'lucide-react';
 
 export default function OnboardingPage() {
-  const { user, completeOnboarding } = useAuth();
+  const { user, loading, completeOnboarding } = useAuth();
   const router = useRouter();
 
   const [minecraftUsername, setMinecraftUsername] = useState('');
   const [discordUsername, setDiscordUsername] = useState('');
   const [avatarPreview, setAvatarPreview] = useState('https://mc-heads.net/avatar/Steve');
   
-  const [loading, setLoading] = useState(false);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [error, setError] = useState('');
 
   // Redirect if already onboarded
   useEffect(() => {
-    if (user?.profile) {
+    if (!loading && user?.profile) {
       router.push('/');
     }
-  }, [user, router]);
+  }, [user, loading, router]);
 
-  // Auto-fill discord username if user was signed in with Discord mock
+  // Auto-fill discord username if user was signed in with Discord
   useEffect(() => {
     if (user && user.email.startsWith('discord_')) {
       // Extract a mock discord username or use default
@@ -48,6 +48,15 @@ export default function OnboardingPage() {
       setAvatarPreview('https://mc-heads.net/avatar/Steve');
     }
   }, [minecraftUsername]);
+
+  if (loading) {
+    return (
+      <div className="max-w-md mx-auto text-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="text-muted-foreground text-xs mt-4">Checking your session...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -71,7 +80,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    setLoading(true);
+    setLoadingSubmit(true);
     setError('');
 
     const res = await completeOnboarding(minecraftUsername, discordUsername);
@@ -79,7 +88,7 @@ export default function OnboardingPage() {
       router.push('/');
     } else {
       setError(res.error || 'Failed to complete onboarding profile.');
-      setLoading(false);
+      setLoadingSubmit(false);
     }
   };
 
@@ -150,7 +159,7 @@ export default function OnboardingPage() {
 
         <button
           type="submit"
-          disabled={loading || !minecraftUsername.trim()}
+          disabled={loadingSubmit || !minecraftUsername.trim()}
           className="w-full h-11 bg-primary hover:bg-primary/95 disabled:bg-muted text-primary-foreground font-extrabold rounded-lg text-xs transition-all active:scale-98 flex items-center justify-center space-x-1.5 cursor-pointer shadow"
         >
           <span>Complete Profile Setup</span>
