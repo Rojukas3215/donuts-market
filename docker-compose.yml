@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: donutmarket_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: donutuser
+      POSTGRES_PASSWORD: donutpassword
+      POSTGRES_DB: donutmarket
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

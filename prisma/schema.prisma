@@ -1,0 +1,297 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  role      Role       @default(USER)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  profile   Profile?
+  listings  Listing[]
+  bids      Bid[]
+  favorites Favorite[]
+  
+  // Custom relations to solve ambiguous names
+  conversationsAsBuyer  Conversation[] @relation("ConversationsAsBuyer")
+  conversationsAsSeller Conversation[] @relation("ConversationsAsSeller")
+  messages              Message[]
+  
+  tradesAsBuyer         TradeTicket[]  @relation("TradesAsBuyer")
+  tradesAsSeller        TradeTicket[]  @relation("TradesAsSeller")
+  tradeMessages         TradeMessage[]
+  
+  reviewsGiven          Review[]       @relation("ReviewsGiven")
+  reviewsReceived       Review[]       @relation("ReviewsReceived")
+  
+  notifications         Notification[]
+  reports               Report[]       @relation("Reporter")
+  resolvedReports       Report[]       @relation("Resolver")
+  adminLogs             AdminLog[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
+
+model Profile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minecraftUsername String   @unique
+  discordUsername   String?
+  avatarUrl         String
+  completedTrades   Int      @default(0)
+  averageRating     Float    @default(0.0)
+  reviewCount       Int      @default(0)
+  verified          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Listing {
+  id              String        @id @default(uuid())
+  title           String
+  description     String
+  category        String
+  price           Float         // For fixed price or starting bid reference
+  images          String[]      // Array of image URLs/paths
+  sellerId        String
+  seller          User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  status          ListingStatus @default(ACTIVE)
+  type            ListingType   @default(FIXED)
+  viewsCount      Int           @default(0)
+  favoritesCount  Int           @default(0)
+  propertyWarning Boolean       @default(false)
+  isFeatured      Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  auction       Auction?
+  favorites     Favorite[]
+  conversations Conversation[]
+  tradeTickets  TradeTicket[]
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+}
+
+enum ListingType {
+  FIXED
+  AUCTION
+}
+
+model Auction {
+  id               String        @id @default(uuid())
+  listingId        String        @unique
+  listing          Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  startingBid      Float
+  minimumIncrement Float
+  endDate          DateTime
+  currentBid       Float         @default(0.0)
+  currentBidderId  String?
+  winnerId         String?
+  bidCount         Int           @default(0)
+  status           AuctionStatus @default(ACTIVE)
+
+  bids             Bid[]
+}
+
+enum AuctionStatus {
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+model Bid {
+  id        String   @id @default(uuid())
+  auctionId String
+  auction   Auction  @relation(fields: [auctionId], references: [id], onDelete: Cascade)
+  bidderId  String
+  bidder    User     @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+  amount    Float
+  createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId   String
+  buyer     User     @relation("ConversationsAsBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId  String
+  seller    User     @relation("ConversationsAsSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  Message[]
+
+  @@unique([listingId, buyerId, sellerId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+}
+
+model TradeTicket {
+  id            String      @id @default(uuid())
+  listingId     String
+  listing       Listing     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerId       String
+  buyer         User        @relation("TradesAsBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId      String
+  seller        User        @relation("TradesAsSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  status        TradeStatus @default(PENDING)
+  
+  // Escrow / payment columns for future plugin integration
+  escrowStatus  EscrowStatus  @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  messages      TradeMessage[]
+  reviews       Review[]
+}
+
+enum TradeStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+enum EscrowStatus {
+  PENDING
+  ACTIVE
+  RELEASED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+model TradeMessage {
+  id            String      @id @default(uuid())
+  tradeTicketId String
+  tradeTicket   TradeTicket @relation(fields: [tradeTicketId], references: [id], onDelete: Cascade)
+  senderId      String?
+  sender        User?       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content       String
+  attachmentUrls String[]
+  isSystem      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+}
+
+model Review {
+  id            String      @id @default(uuid())
+  reviewerId    String
+  reviewer      User        @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  revieweeId    String
+  reviewee      User        @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+  tradeTicketId String
+  tradeTicket   TradeTicket @relation(fields: [tradeTicketId], references: [id], onDelete: Cascade)
+  rating        Int         // 1 to 5
+  text          String
+  createdAt     DateTime    @default(now())
+
+  @@unique([reviewerId, tradeTicketId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  content   String
+  read      Boolean          @default(false)
+  link      String?          // e.g. /trades/xyz
+  createdAt DateTime         @default(now())
+}
+
+enum NotificationType {
+  MESSAGE
+  OUTBID
+  AUCTION_WON
+  AUCTION_ENDING
+  REVIEW
+  LISTING_SOLD
+  TRADE_UPDATE
+}
+
+model Report {
+  id              String       @id @default(uuid())
+  reporterId      String
+  reporter        User         @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType      ReportTarget
+  targetId        String       // ID of Listing, User, or TradeTicket
+  reason          String
+  status          ReportStatus @default(PENDING)
+  createdAt       DateTime     @default(now())
+  resolverId      String?
+  resolver        User?        @relation("Resolver", fields: [resolverId], references: [id], onDelete: Cascade)
+  resolutionNotes String?
+  updatedAt       DateTime     @updatedAt
+}
+
+enum ReportTarget {
+  USER
+  LISTING
+  TRADE
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+model AdminLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action    String
+  target    String
+  details   String?
+  createdAt DateTime @default(now())
+}
