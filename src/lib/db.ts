@@ -679,7 +679,7 @@ export const db = {
         }
 
         // Attach auction info & profiles
-        list = list.map(item => {
+        list = list.map((item: any) => {
           const auction = mockDb.auctions.find(a => a.listingId === item.id);
           const profile = mockDb.profiles.find(p => p.userId === item.sellerId);
           return {
@@ -788,10 +788,10 @@ export const db = {
         });
         return favs.map((f: any) => f.listing) as any;
       } catch {
-        const listIds = mockDb.favorites.filter(f => f.userId === userId).map(f => f.listingId);
+        const listIds = mockDb.favorites.filter((f: any) => f.userId === userId).map((f: any) => f.listingId);
         return mockDb.listings
-          .filter(l => listIds.includes(l.id))
-          .map(item => {
+          .filter((l: any) => listIds.includes(l.id))
+          .map((item: any) => {
             const auction = mockDb.auctions.find(a => a.listingId === item.id);
             const profile = mockDb.profiles.find(p => p.userId === item.sellerId);
             return {
@@ -1348,7 +1348,7 @@ export const db = {
           orderBy: { updatedAt: 'desc' }
         });
 
-        return convs.map(c => {
+        return convs.map((c: any) => {
           const lastMsg = c.messages[0];
           return {
             id: c.id,
@@ -1364,9 +1364,9 @@ export const db = {
         });
       } catch {
         return mockDb.conversations
-          .filter(c => c.buyerId === userId || c.sellerId === userId)
-          .map(c => {
-            const msgs = mockDb.messages.filter(m => m.conversationId === c.id).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+          .filter((c: any) => c.buyerId === userId || c.sellerId === userId)
+          .map((c: any) => {
+            const msgs = mockDb.messages.filter((m: any) => m.conversationId === c.id).sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime());
             return {
               ...c,
               lastMessage: msgs[0]?.content
