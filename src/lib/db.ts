@@ -568,11 +568,32 @@ export const db = {
           where: { id },
           data: { status }
         });
+        
+        if (status === 'SOLD') {
+          setTimeout(async () => {
+            try {
+              // Delete listing from database after 1 minute
+              await prisma.listing.delete({
+                where: { id }
+              });
+            } catch (err) {
+              console.error("Failed to auto-delete sold listing:", err);
+            }
+          }, 60000);
+        }
         return true;
       } catch {
         const item = mockDb.listings.find(l => l.id === id);
         if (item) {
           item.status = status;
+          if (status === 'SOLD') {
+            setTimeout(() => {
+              const index = mockDb.listings.findIndex(l => l.id === id);
+              if (index !== -1) {
+                mockDb.listings.splice(index, 1);
+              }
+            }, 60000);
+          }
           return true;
         }
         return false;
@@ -962,10 +983,7 @@ export const db = {
           });
 
           // Mark listing as sold
-          await prisma.listing.update({
-            where: { id: ticket.listingId },
-            data: { status: 'SOLD' }
-          });
+          await db.listing.updateStatus(ticket.listingId, 'SOLD');
         } else if (status === 'CANCELLED') {
           escrowStatus = 'REFUNDED';
           paymentStatus = 'REFUNDED';
@@ -1016,7 +1034,9 @@ export const db = {
           if (sellerP) sellerP.completedTrades++;
 
           const l = mockDb.listings.find(item => item.id === t.listingId);
-          if (l) l.status = 'SOLD';
+          if (l) {
+            await db.listing.updateStatus(t.listingId, 'SOLD');
+          }
         } else if (status === 'CANCELLED') {
           t.escrowStatus = 'REFUNDED';
           t.paymentStatus = 'REFUNDED';
