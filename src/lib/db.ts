@@ -1496,7 +1496,7 @@ export const db = {
 
         // Update target profile ratings cache
         const allReviews = await prisma.review.findMany({ where: { revieweeId } });
-        const avg = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
+        const avg = allReviews.reduce((sum: number, r: any) => sum + r.rating, 0) / allReviews.length;
 
         await prisma.profile.update({
           where: { userId: revieweeId },
@@ -1549,7 +1549,7 @@ export const db = {
         const revieweeP = mockDb.profiles.find(p => p.userId === revieweeId);
         if (revieweeP) {
           const allR = mockDb.reviews.filter(r => r.revieweeId === revieweeId);
-          const sum = allR.reduce((s, r) => s + r.rating, 0);
+          const sum = allR.reduce((s: number, r: any) => s + r.rating, 0);
           revieweeP.reviewCount = allR.length;
           revieweeP.averageRating = Number((sum / allR.length).toFixed(1));
           // Apply Verified trader badge logic: older than 30 days (mocking true) and threshold
