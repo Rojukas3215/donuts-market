@@ -1625,7 +1625,7 @@ export const db = {
       } catch {
         return {
           totalListings: mockDb.listings.length,
-          completedTrades: mockDb.tradeTickets.filter(t => t.status === 'COMPLETED').length + 46, // seeding simulated history count
+          completedTrades: mockDb.tradeTickets.filter(t => t.status === 'COMPLETED').length,
           registeredUsers: mockDb.users.length,
           activeAuctions: mockDb.auctions.filter(a => a.status === 'ACTIVE').length
         };

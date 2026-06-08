@@ -5,16 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   Search, 
-  ShoppingBag, 
   Gavel, 
-  Users, 
-  TrendingUp, 
   Clock, 
   ChevronRight, 
-  Star, 
-  Award,
   Sparkles,
-  MapPin,
   Flame,
   Plus
 } from 'lucide-react';
@@ -23,50 +17,22 @@ export default function HomePage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   
-  const [stats, setStats] = useState({
-    totalListings: 0,
-    completedTrades: 0,
-    registeredUsers: 0,
-    activeAuctions: 0
-  });
-  
   const [featuredListings, setFeaturedListings] = useState<any[]>([]);
   const [latestListings, setLatestListings] = useState<any[]>([]);
-  const [trendingListings, setTrendingListings] = useState<any[]>([]);
-  const [topTraders, setTopTraders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
-      // Fetch stats
-      const statsRes = await fetch('/api/stats');
-      const statsData = await statsRes.json();
-      if (statsRes.ok && statsData.stats) setStats(statsData.stats);
-
       // Fetch featured / latest listings
       const listRes = await fetch('/api/listings');
       const listData = await listRes.json();
       if (resOk(listRes, listData)) {
         const items = listData.listings;
-        
-        // Filter featured
+        // Featured: auctions or isFeatured
         setFeaturedListings(items.filter((l: any) => l.isFeatured || l.type === 'AUCTION').slice(0, 4));
-        
-        // Filter trending (most viewed)
-        const sortedViews = [...items].sort((a: any, b: any) => b.viewsCount - a.viewsCount);
-        setTrendingListings(sortedViews.slice(0, 4));
-
-        // Filter latest
-        setLatestListings(items.slice(0, 4));
+        // Latest
+        setLatestListings(items.slice(0, 6));
       }
-
-      // Fetch users for leaderboard (simulated using predefined top traders)
-      setTopTraders([
-        { name: 'Steve', avatar: 'https://mc-heads.net/avatar/Steve', trades: 34, rating: 4.8, verified: true },
-        { name: 'DonutAdmin', avatar: 'https://mc-heads.net/avatar/DonutAdmin', trades: 25, rating: 5.0, verified: true },
-        { name: 'Alex', avatar: 'https://mc-heads.net/avatar/Alex', trades: 12, rating: 4.5, verified: false }
-      ]);
-
     } catch (err) {
       console.error(err);
     } finally {
@@ -128,48 +94,7 @@ export default function HomePage() {
         </form>
       </section>
 
-      {/* 2. Public stats row */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-6 bg-card/40 border border-border/50 rounded-2xl p-6 shadow">
-        <div className="flex items-center space-x-4 p-2 justify-center lg:justify-start">
-          <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
-            <ShoppingBag className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase font-bold leading-none">Total Listings</div>
-            <div className="text-lg font-black text-white mt-1">{loading ? '...' : stats.totalListings}</div>
-          </div>
-        </div>
 
-        <div className="flex items-center space-x-4 p-2 justify-center lg:justify-start">
-          <div className="h-10 w-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500 shrink-0">
-            <TrendingUp className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase font-bold leading-none">Completed Trades</div>
-            <div className="text-lg font-black text-white mt-1">{loading ? '...' : stats.completedTrades}</div>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-4 p-2 justify-center lg:justify-start">
-          <div className="h-10 w-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 shrink-0">
-            <Users className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase font-bold leading-none">Active Traders</div>
-            <div className="text-lg font-black text-white mt-1">{loading ? '...' : stats.registeredUsers}</div>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-4 p-2 justify-center lg:justify-start">
-          <div className="h-10 w-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
-            <Gavel className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-[10px] text-muted-foreground uppercase font-bold leading-none">Active Auctions</div>
-            <div className="text-lg font-black text-white mt-1">{loading ? '...' : stats.activeAuctions}</div>
-          </div>
-        </div>
-      </section>
 
       {/* 3. Featured Auctions */}
       <section className="space-y-6">
@@ -247,113 +172,65 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* 4. Leaderboard & Recent Listings side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Latest Listings */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex justify-between items-end">
-            <div>
-              <h2 className="text-lg font-black text-white">Latest Fixed Price Deals</h2>
-              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Buy instantly before other players secure the deal.</p>
-            </div>
-            <Link href="/listings?type=FIXED" className="text-xs font-bold text-primary hover:underline flex items-center space-x-1">
-              <span>View All</span>
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="space-y-4">
-            {loading ? (
-              <div className="space-y-3 animate-pulse">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-card rounded-xl"></div>
-                ))}
-              </div>
-            ) : latestListings.length === 0 ? (
-              <div className="p-6 text-center text-xs text-muted-foreground border border-dashed border-border rounded-xl">
-                No marketplace deals listed yet.
-              </div>
-            ) : (
-              latestListings.map((item) => (
-                <div key={item.id} className="bg-card border border-border p-4 rounded-xl flex justify-between items-center gap-4 hover:border-primary/40 transition-all">
-                  <div className="flex items-center space-x-3 min-w-0">
-                    <span className="text-3xl select-none hidden sm:inline shrink-0">
-                      {item.category === 'Spawners' ? '🌀' : item.category === 'Armor' ? '🛡️' : item.category === 'Weapons' ? '⚔️' : '💎'}
-                    </span>
-                    <div className="min-w-0">
-                      <h3 className="text-xs font-bold text-white truncate">
-                        <Link href={`/listings/${item.id}`} className="hover:text-primary transition-all">{item.title}</Link>
-                      </h3>
-                      <div className="text-[10px] text-muted-foreground mt-1 flex items-center space-x-2">
-                        <span>Category: {item.category}</span>
-                        <span>&bull;</span>
-                        <span>Seller: {item.sellerUsername || 'Steve'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0 flex items-center space-x-3">
-                    <div className="space-y-0.5">
-                      <div className="text-[8px] text-muted-foreground uppercase leading-none">Buy Now</div>
-                      <div className="text-xs font-black text-primary">{item.price.toLocaleString()} Dollars</div>
-                    </div>
-                    <Link href={`/listings/${item.id}`} className="px-2.5 py-1.5 bg-primary hover:bg-primary/95 text-primary-foreground text-[10px] font-bold rounded">
-                      Buy
-                    </Link>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Leaderboard Column */}
-        <div className="space-y-6">
+      {/* 4. Latest Listings */}
+      <section className="space-y-6">
+        <div className="flex justify-between items-end">
           <div>
-            <h2 className="text-lg font-black text-white flex items-center space-x-1.5">
-              <Award className="h-5 w-5 text-emerald-500 fill-emerald-500/15 animate-bounce" />
-              <span>Top Traders Leaderboard</span>
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Ranked by total completed trades and average reviews.</p>
+            <h2 className="text-lg font-black text-white">Latest Listings</h2>
+            <p className="text-xs text-muted-foreground mt-0.5 font-medium">Buy instantly before other players secure the deal.</p>
           </div>
+          <Link href="/listings" className="text-xs font-bold text-primary hover:underline flex items-center space-x-1">
+            <span>View All</span>
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        </div>
 
-          <div className="bg-card border border-border rounded-xl p-4 divide-y divide-border/30 shadow-md">
-            {topTraders.map((trader, idx) => (
-              <div key={trader.name} className="flex justify-between items-center py-3">
-                <div className="flex items-center space-x-3">
-                  <span className={`text-xs font-black w-4 text-center ${
-                    idx === 0 ? 'text-primary' : idx === 1 ? 'text-gray-400' : 'text-accent/70'
-                  }`}>
-                    #{idx + 1}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="space-y-3 animate-pulse">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-16 bg-card rounded-xl"></div>
+              ))}
+            </div>
+          ) : latestListings.length === 0 ? (
+            <div className="p-8 text-center text-xs text-muted-foreground border border-dashed border-border rounded-xl">
+              No listings yet. Be the first to list something!
+            </div>
+          ) : (
+            latestListings.map((item) => (
+              <div key={item.id} className="bg-card border border-border p-4 rounded-xl flex justify-between items-center gap-4 hover:border-primary/40 transition-all">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <span className="text-3xl select-none hidden sm:inline shrink-0">
+                    {item.category === 'Spawners' ? '🌀' : item.category === 'Armor' ? '🛡️' : item.category === 'Weapons' ? '⚔️' : item.category === 'Resources' ? '💎' : item.category === 'Kits' ? '📦' : item.category === 'Bases' ? '🏰' : '🍪'}
                   </span>
-                  
-                  <img src={trader.avatar} className="h-8 w-8 rounded bg-muted border border-border" alt="avatar" />
-                  
-                  <div>
-                    <h4 className="text-xs font-bold text-white hover:text-primary transition-all">
-                      <Link href={`/u/${trader.name}`}>{trader.name}</Link>
-                    </h4>
-                    
-                    {/* Stars */}
-                    <div className="flex items-center space-x-1 mt-0.5">
-                      <Star className="h-2.5 w-2.5 fill-primary text-primary" />
-                      <span className="text-[9px] text-white font-bold">{trader.rating}</span>
-                      <span className="text-[9px] text-muted-foreground">({trader.trades} trades)</span>
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-bold text-white truncate">
+                      <Link href={`/listings/${item.id}`} className="hover:text-primary transition-all">{item.title}</Link>
+                    </h3>
+                    <div className="text-[10px] text-muted-foreground mt-1 flex items-center space-x-2">
+                      <span>{item.category}</span>
+                      <span>&bull;</span>
+                      <span>{item.type === 'AUCTION' ? '⏱ Auction' : 'Fixed Price'}</span>
+                      <span>&bull;</span>
+                      <span>by {item.sellerUsername || 'Unknown'}</span>
                     </div>
                   </div>
                 </div>
 
-                {trader.verified && (
-                  <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                    Pro
-                  </span>
-                )}
+                <div className="text-right shrink-0 flex items-center space-x-3">
+                  <div className="space-y-0.5">
+                    <div className="text-[8px] text-muted-foreground uppercase leading-none">{item.type === 'AUCTION' ? 'Starting Bid' : 'Buy Now'}</div>
+                    <div className="text-xs font-black text-primary">{item.price.toLocaleString()} Dollars</div>
+                  </div>
+                  <Link href={`/listings/${item.id}`} className="px-2.5 py-1.5 bg-primary hover:bg-primary/95 text-primary-foreground text-[10px] font-bold rounded">
+                    {item.type === 'AUCTION' ? 'Bid' : 'Buy'}
+                  </Link>
+                </div>
               </div>
-            ))}
-          </div>
+            ))
+          )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

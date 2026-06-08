@@ -45,10 +45,26 @@ export async function getSession(req: NextRequest): Promise<User | null> {
   const payload = verifyToken(token);
   if (!payload) return null;
 
-  const user = await db.user.findUnique({ id: payload.userId });
-  if (!user || user.status === 'BANNED') return null;
+  try {
+    const user = await db.user.findUnique({ id: payload.userId });
+    if (user) {
+      if (user.status === 'BANNED') return null;
+      return user;
+    }
+  } catch {
+    // DB unavailable — fall through to JWT fallback
+  }
 
-  return user;
+  // JWT fallback: reconstruct a minimal user from the verified token
+  // This keeps users logged in even when the DB is temporarily unreachable
+  return {
+    id: payload.userId,
+    email: payload.email,
+    role: payload.role as any,
+    status: 'ACTIVE',
+    createdAt: new Date(),
+    profile: undefined,
+  };
 }
 
 // Set session cookie on response
