@@ -462,7 +462,7 @@ export const db = {
         });
         return list as any;
       } catch {
-        return mockDb.users.map(u => ({
+        return mockDb.users.map((u: any) => ({
           ...u,
           profile: mockDb.profiles.find(p => p.userId === u.id) || null
         }));
@@ -1056,7 +1056,7 @@ export const db = {
           },
           orderBy: { updatedAt: 'desc' }
         });
-        return tickets.map(ticket => ({
+        return tickets.map((ticket: any) => ({
           id: ticket.id,
           listingId: ticket.listingId,
           listingTitle: ticket.listing.title,
@@ -1202,7 +1202,7 @@ export const db = {
           include: { sender: { include: { profile: true } } },
           orderBy: { createdAt: 'asc' }
         });
-        return list.map(m => ({
+        return list.map((m: any) => ({
           id: m.id,
           tradeTicketId: m.tradeTicketId,
           senderId: m.senderId,
@@ -1389,7 +1389,7 @@ export const db = {
           orderBy: { createdAt: 'asc' }
         });
 
-        return msgs.map(m => ({
+        return msgs.map((m: any) => ({
           id: m.id,
           conversationId: m.conversationId,
           senderId: m.senderId,
@@ -1577,7 +1577,7 @@ export const db = {
           include: { reviewer: { include: { profile: true } } },
           orderBy: { createdAt: 'desc' }
         });
-        return revs.map(r => ({
+        return revs.map((r: any) => ({
           id: r.id,
           reviewerId: r.reviewerId,
           reviewerUsername: r.reviewer.profile?.minecraftUsername || 'Unknown',
@@ -1707,7 +1707,7 @@ export const db = {
           },
           orderBy: { createdAt: 'desc' }
         });
-        return list.map(r => ({
+        return list.map((r: any) => ({
           id: r.id,
           reporterId: r.reporterId,
           reporterUsername: r.reporter.profile?.minecraftUsername || 'Unknown',
