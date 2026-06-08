@@ -484,6 +484,23 @@ export const db = {
         }
         return false;
       }
+    },
+
+    async updateRole(userId: string, role: UserRole): Promise<boolean> {
+      try {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { role }
+        });
+        return true;
+      } catch {
+        const u = mockDb.users.find(u => u.id === userId);
+        if (u) {
+          u.role = role;
+          return true;
+        }
+        return false;
+      }
     }
   },
 

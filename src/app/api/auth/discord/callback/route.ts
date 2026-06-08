@@ -10,6 +10,8 @@ export async function GET(req: NextRequest) {
   const error = searchParams.get('error');
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const guildId = process.env.DISCORD_GUILD_ID;
+  const adminRoleId = process.env.DISCORD_ADMIN_ROLE_ID;
 
   if (error || !code) {
     return NextResponse.redirect(new URL('/login?error=Discord+authorization+was+cancelled', appUrl));
@@ -40,9 +42,7 @@ export async function GET(req: NextRequest) {
 
     // Step 2: Use access token to fetch the Discord user's profile
     const userResponse = await fetch('https://discord.com/api/users/@me', {
-      headers: {
-        Authorization: `Bearer ${tokens.access_token}`,
-      },
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
 
     const discordUser = await userResponse.json();
@@ -58,25 +58,58 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=Discord+account+must+have+a+verified+email', appUrl));
     }
 
-    const discordUsername = discordUser.global_name || discordUser.username;
+    // Step 3: Check guild membership and role
+    // This determines if the user should be granted ADMIN access on this website
+    let isAdmin = false;
 
-    // Step 3: Look up or create the user in the database
+    if (guildId && adminRoleId) {
+      try {
+        const memberResponse = await fetch(
+          `https://discord.com/api/users/@me/guilds/${guildId}/member`,
+          { headers: { Authorization: `Bearer ${tokens.access_token}` } }
+        );
+
+        if (memberResponse.ok) {
+          const memberData = await memberResponse.json();
+          // memberData.roles is an array of role ID strings the user has in the server
+          if (Array.isArray(memberData.roles) && memberData.roles.includes(adminRoleId)) {
+            isAdmin = true;
+          }
+        } else {
+          // User is not a member of the server at all — that's fine, just USER role
+          console.info('User is not in the Discord server — defaulting to USER role');
+        }
+      } catch (guildErr) {
+        // Guild check failed — don't block login, just default to USER
+        console.warn('Guild role check failed, defaulting to USER:', guildErr);
+      }
+    }
+
+    const assignedRole: 'ADMIN' | 'USER' = isAdmin ? 'ADMIN' : 'USER';
+
+    // Step 4: Look up or create the user in the database
     let user = await db.user.findUnique({ email });
 
     if (!user) {
-      // New user — create account, then redirect to onboarding
+      // New user — create account with the appropriate role
       user = await db.user.create({
         email,
         password: '', // OAuth users don't use passwords
-        role: 'USER',
+        role: assignedRole,
       });
+    } else {
+      // Existing user — always sync their role with Discord server roles on each login
+      if (user.role !== assignedRole) {
+        await db.user.updateRole(user.id, assignedRole);
+        user = { ...user, role: assignedRole };
+      }
     }
 
     if (user.status === 'BANNED') {
       return NextResponse.redirect(new URL('/login?error=This+account+has+been+banned', appUrl));
     }
 
-    // Step 4: Set the session cookie
+    // Step 5: Set the session cookie and redirect
     const hasProfile = !!user.profile;
     const redirectPath = hasProfile ? '/' : '/onboarding';
 

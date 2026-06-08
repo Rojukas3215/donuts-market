@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID;
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
       const redirectUri = encodeURIComponent(`${appUrl}/api/auth/discord/callback`);
-      const scope = encodeURIComponent('identify email');
+      const scope = encodeURIComponent('identify email guilds.members.read');
 
       // Redirect the browser to Discord's authorization page
       window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
