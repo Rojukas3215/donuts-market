@@ -769,7 +769,7 @@ export const db = {
             }
           }
         });
-        return favs.map(f => f.listing) as any;
+        return favs.map((f: any) => f.listing) as any;
       } catch {
         const listIds = mockDb.favorites.filter(f => f.userId === userId).map(f => f.listingId);
         return mockDb.listings
