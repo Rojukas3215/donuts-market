@@ -826,7 +826,7 @@ export const db = {
     async placeBid(userId: string, auctionId: string, amount: number): Promise<{ success: boolean; error?: string }> {
       try {
         // Run Prisma transaction to prevent race conditions
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
           const auction = await tx.auction.findUnique({
             where: { id: auctionId },
             include: { listing: true }
