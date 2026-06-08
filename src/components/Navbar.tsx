@@ -45,8 +45,7 @@ export default function Navbar() {
   }, [user]);
 
   const navLinks = [
-    { name: 'Marketplace', href: '/listings?type=FIXED', icon: ShoppingBag },
-    { name: 'Auctions', href: '/listings?type=AUCTION', icon: Gavel },
+    { name: 'Marketplace & Auction', href: '/listings', icon: Compass },
   ];
 
   return (
