@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "Donuts Market | DonutSMP Minecraft Asset Marketplace",
   description: "Buy, sell, auction, and trade Minecraft items, bases, spawners, and services securely on the Donuts Market player marketplace.",
   keywords: ["Minecraft", "DonutSMP", "Marketplace", "Auction House", "Minecraft Trading", "Bases", "Spawners", "Trade Ticket"],
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
