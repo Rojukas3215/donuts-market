@@ -7,8 +7,6 @@ import { useAuth } from '@/context/AuthContext';
 import { 
   ShoppingBag, 
   Gavel, 
-  Map, 
-  Briefcase, 
   MessageSquare, 
   Bell, 
   User as UserIcon, 
@@ -49,8 +47,6 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Marketplace', href: '/listings?type=FIXED', icon: ShoppingBag },
     { name: 'Auctions', href: '/listings?type=AUCTION', icon: Gavel },
-    { name: 'Property', href: '/listings?category=Bases', icon: Map },
-    { name: 'Services', href: '/listings?category=Services', icon: Briefcase },
   ];
 
   return (
