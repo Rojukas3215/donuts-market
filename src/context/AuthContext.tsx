@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithDiscord = async () => {
     try {
       const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '1513482845530755154';
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+      const appUrl = window.location.origin;
       const redirectUri = encodeURIComponent(`${appUrl}/api/auth/discord/callback`);
       const scope = encodeURIComponent('identify email guilds.members.read');
 
