@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { getSession, setSessionCookie } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,10 +29,17 @@ export async function POST(req: NextRequest) {
       avatarUrl
     });
 
-    return NextResponse.json({
-      success: true,
-      profile
+    // Re-issue the JWT cookie with hasProfile: true so refreshing the page
+    // keeps the user on the home screen instead of redirecting to /onboarding
+    const res = NextResponse.json({ success: true, profile });
+    setSessionCookie(res, {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      hasProfile: true,
     });
+
+    return res;
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 });
   }

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+// Raise the body size limit for this route to allow image uploads
+export const maxDuration = 30;
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();

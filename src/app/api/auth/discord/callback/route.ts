@@ -120,6 +120,7 @@ export async function GET(req: NextRequest) {
       userId: user.id,
       email: user.email,
       role: user.role,
+      hasProfile,
     });
 
     return response;

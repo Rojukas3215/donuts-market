@@ -10,6 +10,7 @@ export interface JWTPayload {
   userId: string;
   role: string;
   email: string;
+  hasProfile?: boolean;
 }
 
 // Hash password helper
@@ -55,22 +56,22 @@ export async function getSession(req: NextRequest): Promise<User | null> {
     // DB unavailable — fall through to JWT fallback
   }
 
-  // JWT fallback: reconstruct a minimal user from the verified token
-  // This keeps users logged in even when the DB is temporarily unreachable
+  // JWT fallback: reconstruct user from the verified token so the session
+  // survives serverless cold starts and temporary DB outages.
+  // hasProfile is stored in the token so onboarding state is preserved.
   return {
     id: payload.userId,
     email: payload.email,
     role: payload.role as any,
     status: 'ACTIVE',
     createdAt: new Date(),
-    profile: undefined,
+    profile: payload.hasProfile ? ({} as any) : undefined,
   };
 }
 
 // Set session cookie on response
 export function setSessionCookie(res: NextResponse, payload: JWTPayload) {
   const token = signToken(payload);
-  
   res.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

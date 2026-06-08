@@ -42,6 +42,27 @@ export default function NewListingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Compress image client-side before uploading to stay within Vercel's body limit
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const MAX = 1024;
+        const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Compression failed')), 'image/jpeg', 0.75);
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -49,14 +70,12 @@ export default function NewListingPage() {
     setUploading(true);
     setError('');
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      });
+      const compressed = await compressImage(file);
+      const formData = new FormData();
+      formData.append('file', compressed, file.name);
+
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
       if (res.ok && data.success) {
         setImageUrl(data.url);
